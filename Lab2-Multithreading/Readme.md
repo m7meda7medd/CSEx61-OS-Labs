@@ -32,31 +32,6 @@ A parallelized version of matrix multiplication can be done using one of these t
 Your programs should do the following:
 
 * Your program is executed as: ./matMultp Mat1 Mat2 MatOut, where Mat1 and Mat2 are the names of the text files to read the first and second matrices, respectively, and MatOut is the prefix of the text files names to write the output matrices (each file represents one method). If the user does not enter this information, the default is a.txt and b.txt, for input matrixes A and B, and c for output matrices (of all three methods) C. The following example should clarify inputs/outputs files.
-
-    Arguments
-
-        Example: 
-            ./matMultp a b c
-        Input files: 
-            a.txt 
-            b.txt
-        Output files: 
-            c_per_matrix.txt
-            c_per_row.txt
-            c_per_element.txt
-
-    No Arguments:
-
-        Example: 
-            ./matMultp
-        Input files: 
-            a.txt 
-            b.txt
-        Output files: 
-            c_per_matrix.txt
-            c_per_row.txt
-            c_per_element.txt
-
     Custom Arguments:
 
         Example: 
@@ -65,10 +40,8 @@ Your programs should do the following:
             x.txt 
             y.txt
         Output files: 
-            z_per_matrix.txt
-            z_per_row.txt
-            z_per_element.txt
-
+            z.txt
+  
 * Read the number of rows and columns of the input matrices. They are written in the first line of the file as ”row=x col=y”. The following is an example of the format on an input file.
 
         row=3 col=5
@@ -80,22 +53,16 @@ Your programs should do the following:
 * Use threads to calculate the matrix that results from multiplying the input two matrixes.
 * Output the resulting matrices in three files (each file represents one method). The following is an example of the format of the three output files.
 
-    c_per_matrix.txt
-
+    z.txt
         Method: A thread per matrix
         row=2 col=2
         1 2
         3 4
-
-    c_per_row.txt
-
         Method: A thread per row
         row=2 col=2
         1 2
         3 4
-
-    c_per_element.txt
-
+  
         Method: A thread per element
         row=2 col=2
         1 2
