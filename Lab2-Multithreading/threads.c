@@ -102,15 +102,17 @@ main (int argc, char *argv[])
 	  gettimeofday (&start, NULL);	//start checking time
 	  pthread_t *threads =
 	    (pthread_t *) malloc (sizeof (pthread_t) * matrix1.row);
-	  Param_t arg = {.m1 = &matrix1,.m2 = &matrix2,.res =
-	      &result,.row_id = 0
-	  };
+	  Param_t* args= malloc(sizeof(Param_t)* matrix1.row) ;
 	  for (int t = 0; t < matrix1.row; t++)
 	    {
-	      arg.row_id = t;
+	   args[t].m1 = &matrix1 ;
+           args[t].m2 = &matrix2,
+           args[t].res =&result,
+           args[t].row_id = t ;
+
 	      err =
 		pthread_create (&threads[t], NULL, Multiply_Row_by_Matrix,
-				(void *) &arg);
+				(void *) &args[t]);
 	      if (err)
 		{
 		  perror ("ERROR :  pthread_create()\n");
@@ -124,6 +126,7 @@ main (int argc, char *argv[])
 	    {
 	      pthread_join (threads[t], NULL);
 	    }
+	  free(args) ;
 	  gettimeofday (&stop, NULL);	//end checking time
 
 	  printf ("Seconds taken %lu\n", stop.tv_sec - start.tv_sec);
@@ -137,17 +140,19 @@ main (int argc, char *argv[])
 	  pthread_t *threads =
 	    (pthread_t *) malloc (sizeof (pthread_t) *
 				  (result.row * result.col));
-	  Param_t arg = {.m1 = &matrix1,.m2 = &matrix2,.res =
-	      &result,.row_id = 0,.col_id = 0
-	  };
+
+	   Param_t* args= malloc(sizeof(Param_t)* matrix1.row * matrix2.col) ;
 
 	  for (int t = 0; t < (matrix1.row * matrix2.col); t++)
 	    {
-	      arg.row_id = row_index;
-	      arg.col_id = col_index;
+	   args[t].m1 = &matrix1 ;
+           args[t].m2 = &matrix2,
+           args[t].res =&result,
+           args[t].row_id = row_index ;
+	   args[t].col_id = col_index ;
 	      err =
 		pthread_create (&threads[t], NULL, Multiply_Row_by_Col,
-				(void *) &arg);
+				(void *) &args[t]);
 	      if (err)
 		{
 		  perror ("ERROR :  pthread_create()\n");
@@ -168,7 +173,7 @@ main (int argc, char *argv[])
 	      pthread_join (threads[t], NULL);
 	    }
 	  gettimeofday (&stop, NULL);	//end checking time
-
+	  free(args);
 	  printf ("Seconds taken:%lu\n", stop.tv_sec - start.tv_sec);
 	  printf ("Microseconds taken: %lu\n", stop.tv_usec - start.tv_usec);
 
