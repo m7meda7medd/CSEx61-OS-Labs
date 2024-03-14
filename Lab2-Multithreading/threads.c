@@ -15,13 +15,12 @@ typedef struct Matrix_struct
   int col;
 } Matrix_t;
 
-typedef struct Matrices
+typedef struct param
 {
-  Matrix_t *m1, *m2, *res;
-  int id;
-  int row_id;
-  int col_id;
+  int row_index;
+  int col_index;
 } Param_t;
+
 void *Multiply_Two_Matrices (void *param);
 void *Multiply_Row_by_Matrix (void *param);
 void *Multiply_Row_by_Col (void *param);
@@ -30,6 +29,9 @@ int Read_Matrix (int fd, Matrix_t * matrix_1);
 void Free_Matrix (Matrix_t * l_matrix);
 void Print_Matrix (const Matrix_t * l_matrix);
 int Resolve_Output_File_Name (int* fd_arr,char* prefix);
+
+Matrix_t matrix1 ,matrix2 ,result ;
+
 void main (int argc, char *argv[])
 {
   int fd1, fd2 ;
@@ -40,7 +42,6 @@ void main (int argc, char *argv[])
   char ch;
   struct timeval stop, start;
 
-  Matrix_t matrix1, matrix2, result;
   result.matrix = NULL;
 
 
@@ -110,10 +111,8 @@ void main (int argc, char *argv[])
 	{
 	  gettimeofday (&start, NULL);	//start checking time
 	  pthread_t MxM_thread;
-	  Param_t arg = {.m1 = &matrix1,.m2 = &matrix2,.res = &result,.id = 1
-	  };
 	  if (pthread_create
-	      (&MxM_thread, NULL, Multiply_Two_Matrices, (void *) &(arg)))
+	      (&MxM_thread, NULL, Multiply_Two_Matrices, NULL))
 	    {
 	      perror ("Error Creating Thread\n");
 	    }
@@ -132,10 +131,7 @@ Print_Matrix(&matrix2) ;
 	  Param_t* args= malloc(sizeof(Param_t)* matrix1.row) ;
 	  for (int t = 0; t < matrix1.row; t++)
 	    {
-	   args[t].m1 = &matrix1 ;
-           args[t].m2 = &matrix2,
-           args[t].res =&result,
-           args[t].row_id = t ;
+           	args[t].row_index = t ;
 
 	      err =
 		pthread_create (&threads[t], NULL, Multiply_Row_by_Matrix,
@@ -172,11 +168,8 @@ Print_Matrix(&matrix2) ;
 
 	  for (int t = 0; t < (matrix1.row * matrix2.col); t++)
 	    {
-	   args[t].m1 = &matrix1 ;
-           args[t].m2 = &matrix2,
-           args[t].res =&result,
-           args[t].row_id = row_index ;
-	   args[t].col_id = col_index ;
+           args[t].row_index = row_index ;
+	   args[t].col_index = col_index ;
 	      err =
 		pthread_create (&threads[t], NULL, Multiply_Row_by_Col,
 				(void *) &args[t]);
@@ -267,22 +260,22 @@ void *
 Multiply_Two_Matrices (void *param)
 {
   Param_t *Data = (Param_t *) param;
-  if (Data->m1->col != Data->m2->row)
+  if (matrix1.col != matrix2.row)
     {
       perror ("Error: Incompatible matrices for multiplication\n");
       exit (1);
     }
 
   // Perform matrix multiplication
-  for (int i = 0; i < Data->m1->row; i++)
+  for (int i = 0; i < result.row; i++)
     {
-      for (int j = 0; j < Data->m2->col; j++)
+      for (int j = 0; j < result.col; j++)
 	{
-	  Data->res->matrix[i][j] = 0;
-	  for (int k = 0; k < Data->m1->col; k++)
+	  result.matrix[i][j] = 0;
+	  for (int k = 0; k < matrix1.col; k++)
 	    {
-	      Data->res->matrix[i][j] +=
-		Data->m1->matrix[i][k] * Data->m2->matrix[k][j];
+	      result.matrix[i][j] +=
+		matrix1.matrix[i][k] * matrix2.matrix[k][j];
 	    }
 	}
     }
@@ -295,13 +288,13 @@ Multiply_Row_by_Matrix (void *param)
 {
   Param_t *Data = (Param_t *) param;
   // Perform matrix multiplication
-  for (int j = 0; j < Data->m2->col; j++)
+  for (int j = 0; j < result.col; j++)
     {
-      Data->res->matrix[Data->row_id][j] = 0;
-      for (int k = 0; k < Data->m1->col; k++)
+      result.matrix[Data->row_index][j] = 0;
+      for (int k = 0; k < matrix1.col; k++)
 	{
-	  Data->res->matrix[Data->row_id][j] +=
-	    Data->m1->matrix[Data->row_id][k] * Data->m2->matrix[k][j];
+	  result.matrix[Data->row_index][j] +=
+	    matrix1.matrix[Data->row_index][k] * matrix2.matrix[k][j];
 	}
     }
   return NULL;
@@ -312,11 +305,11 @@ Multiply_Row_by_Col (void *param)
 {
   Param_t *Data = (Param_t *) param;
   // Perform matrix multiplication
-  Data->res->matrix[Data->row_id][Data->col_id] = 0;
-  for (int k = 0; k < Data->m1->col; k++)
+  result.matrix[Data->row_index][Data->col_index] = 0;
+  for (int k = 0; k < matrix1.col; k++)
     {
-      Data->res->matrix[Data->row_id][Data->col_id] +=
-	Data->m1->matrix[Data->row_id][k] * Data->m2->matrix[k][Data->col_id];
+      result.matrix[Data->row_index][Data->col_index] +=
+	matrix1.matrix[Data->row_index][k] * matrix2.matrix[k][Data->col_index];
     }
   return NULL;
 }
@@ -469,13 +462,13 @@ int Resolve_Output_File_Name (int* fd_arr,char* prefix){
 char file_name [255] ;
 strcpy(file_name,prefix) ;
 strcat(file_name,"_thread_per_matrix.txt") ;
-fd_arr[0] =  open(file_name, O_WRONLY | O_CREAT , 0666);
+fd_arr[0] =  open(file_name, O_WRONLY | O_CREAT | O_TRUNC , 0666);
 strcpy(file_name,prefix) ;
 strcat(file_name,"_thread_per_row.txt") ;
-fd_arr[1] =  open(file_name, O_WRONLY | O_CREAT , 0666);
+fd_arr[1] =  open(file_name, O_WRONLY | O_CREAT | O_TRUNC , 0666);
 strcpy(file_name,prefix) ;
 strcat(file_name,"_thread_per_element.txt") ;
-fd_arr[2] =  open(file_name, O_WRONLY | O_CREAT , 0666);
+fd_arr[2] =  open(file_name, O_WRONLY | O_CREAT | O_TRUNC , 0666);
 if ((fd_arr[0] != -1) && (fd_arr[1] != -1) && (fd_arr[2] != -1))
 {
        	return 0 ;
