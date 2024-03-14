@@ -29,11 +29,12 @@ int Resolve_File_Name (char *file_name);
 int Read_Matrix (int fd, Matrix_t * matrix_1);
 void Free_Matrix (Matrix_t * l_matrix);
 void Print_Matrix (const Matrix_t * l_matrix);
-
-void
-main (int argc, char *argv[])
+int Resolve_Output_File_Name (int* fd_arr,char* prefix);
+void main (int argc, char *argv[])
 {
-  int fd1, fd2, o_fd1, o_fd2, o_fd3;
+  int fd1, fd2 ;
+  int out_fd[3] ;
+  int o_fd ;
   int err;
   int stdout_fd, saved_fd;
   char ch;
@@ -42,19 +43,45 @@ main (int argc, char *argv[])
   Matrix_t matrix1, matrix2, result;
   result.matrix = NULL;
 
+
   if (argc == 4)		// convention naming 
     {
       fd1 = Resolve_File_Name (argv[1]);
-      fd2 = Resolve_File_Name (argv[2]);
-      o_fd1 = Resolve_File_Name (argv[3]);
-    }
-  else
-    {
-      perror
-	("Add arguments as Mat1_filename Mat_2filename  result_filename\n");
-      exit (1);
+      fd2 = Resolve_File_Name (argv[2]); 
+     if ( Resolve_Output_File_Name (out_fd,argv[3]) == -1)
+     {
+	     perror("Can't Create Output files\n") ;
+	     exit(1) ;
+     }
 
     }
+  else if ( argc == 3)
+    {
+      fd1 = Resolve_File_Name (argv[1]);
+      fd2 = Resolve_File_Name (argv[2]);
+           if ( Resolve_Output_File_Name (out_fd,"c") == -1)
+     {
+             perror("Can't Create Output files\n") ;
+             exit(1) ;
+     }
+
+    }
+  else if (argc == 1)
+  {
+
+      fd1 = Resolve_File_Name ("a");
+      fd2 = Resolve_File_Name ("b");
+           if ( Resolve_Output_File_Name (out_fd,"c") == -1)
+     {
+             perror("Can't Create Output files\n") ;
+             exit(1) ;
+     }
+
+  }
+  else{
+     perror("Invalid Number of arguments\n");
+     exit(1) ;
+  }
   Read_Matrix (fd1, &matrix1);
   Read_Matrix (fd2, &matrix2);
 
@@ -90,8 +117,8 @@ main (int argc, char *argv[])
 	    {
 	      perror ("Error Creating Thread\n");
 	    }
-//Print_Matrix(&matrix1) ;
-//Print_Matrix(&matrix2) ;
+Print_Matrix(&matrix1) ;
+Print_Matrix(&matrix2) ;
 	  pthread_join (MxM_thread, NULL);
 	  gettimeofday (&stop, NULL);	//end checking time                    
 	  printf ("Seconds taken %lu\n", stop.tv_sec - start.tv_sec);
@@ -190,10 +217,11 @@ main (int argc, char *argv[])
 
       if (result.matrix != NULL)
 	{
+	
 	  stdout_fd = fileno (stdout);
 	  saved_fd = dup (stdout_fd);
-
-	  if ((dup2 (o_fd1, stdout_fd) != -1))
+	 o_fd = out_fd[(ch-49)] ; // get fd of ch asci - 48 -1 ;
+	  if ((dup2 (o_fd, stdout_fd) != -1))
 	    {
 	      switch (ch)
 		{
@@ -227,8 +255,9 @@ main (int argc, char *argv[])
 
   close (fd1);
   close (fd2);
-  close (o_fd1);
-
+  close (out_fd[0]);
+  close (out_fd[1]);
+  close (out_fd[2]);
   Free_Matrix (&matrix1);
   Free_Matrix (&matrix2);
 
@@ -435,4 +464,24 @@ Resolve_File_Name (char *file_name)
 	}
     }
   return -1;			// return -1 in case or error 
+}
+int Resolve_Output_File_Name (int* fd_arr,char* prefix){
+char file_name [255] ;
+strcpy(file_name,prefix) ;
+strcat(file_name,"_thread_per_matrix.txt") ;
+fd_arr[0] =  open(file_name, O_WRONLY | O_CREAT , 0666);
+strcpy(file_name,prefix) ;
+strcat(file_name,"_thread_per_row.txt") ;
+fd_arr[1] =  open(file_name, O_WRONLY | O_CREAT , 0666);
+strcpy(file_name,prefix) ;
+strcat(file_name,"_thread_per_element.txt") ;
+fd_arr[2] =  open(file_name, O_WRONLY | O_CREAT , 0666);
+if ((fd_arr[0] != -1) && (fd_arr[1] != -1) && (fd_arr[2] != -1))
+{
+       	return 0 ;
+}
+else
+{
+return -1 ; 
+}
 }
